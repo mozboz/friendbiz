@@ -1,0 +1,49 @@
+
+# actions for a user
+
+# inventory
+    # show everyone you own
+    # if too long reply with top value and DM whole list
+# buy @name
+    # - buy this person if you have enough credit
+    # reply with status
+# balance
+    # show your cash inventory
+# history
+    # get DM of last 10 transactions
+# status @name
+    # show status of this user
+    # price, owner
+# help
+    # show commands
+
+
+    # twitfriends:monkey
+
+
+
+# data
+    table users
+
+    index id
+    index twitter_handle
+
+    id              int,
+    twitter_handle  varchar(128),
+    owned           boolean,
+    owner_id        int,
+    current_price   int,
+    balance         int
+
+
+# transactions
+
+    index buyer_search buyer,
+    index seller_search seller,
+    index transaction_search buyer, seller,
+
+    id              int,
+    datetime        date,
+    buyer           int,
+    seller          int,
+    price           int

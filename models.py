@@ -23,11 +23,15 @@ class User(Base):
     current_price = Column(Integer, nullable=False, default=1)
     balance = Column(Integer, nullable=False, default=0)
 
-    owner_relationship = relationship("User",
+    inventory = relationship("User",
         cascade="all, delete-orphan",
         backref=backref('owner', remote_side=id)
         )
 
+    def __repr__(self):
+        return "<User(id='%s', handle='%s')>" % (
+            self.id, self.handle)
+    # inventory = relationship("U", )
     # transactions = relationship("Transaction")
 
 

@@ -44,7 +44,11 @@ u2 = User(handle='u2', owner=u1)
 s.add(u2)
 s.commit()
 
-t1 = Transaction(amount=1, buyer=u2)
+u3 = User(handle='u3', owner=u1)
+s.add(u3)
+s.commit()
+
+t1 = Transaction(amount=1, buyer=u2, seller=u1, user_sold=u3)
 s.add(t1)
 s.commit()
 

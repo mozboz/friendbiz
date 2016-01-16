@@ -28,7 +28,7 @@ class User(Base):
         backref=backref('owner', remote_side=id)
         )
 
-    transactions_as_buyer = relationship("Transaction", back_populates="buyer")
+    # transactions = relationship("Transaction")
 
 
 
@@ -37,11 +37,16 @@ class Transaction(Base):
     __table_args__ = {'mysql_charset': 'utf8', 'mysql_engine': 'InnoDB'}
     id = Column(Integer, primary_key=True)
     time = Column(DateTime(timezone=True), default=datetime.utcnow)
-    buyer_id = Column(Integer, ForeignKey('user.id'))
-    # seller_id = Column(Integer, ForeignKey('user.id'))
-    #user_sold = Column(Integer, ForeignKey('user.id'))
+    buyer_id = Column(Integer, ForeignKey('user.id'), nullable=False)
+    seller_id = Column(Integer, ForeignKey('user.id'), nullable=False)
+    user_sold_id = Column(Integer, ForeignKey('user.id'), nullable=False)
     amount = Column(Integer)
-    buyer = relationship(User, back_populates="transactions_as_buyer", foreign_keys=[buyer_id])
+    buyer = relationship(User, foreign_keys=[buyer_id])
+    seller = relationship(User, foreign_keys=[seller_id])
+    user_sold = relationship(User, foreign_keys=[user_sold_id])
+
+    # seller = relationship(User, back_populates="transactions_as_buyer", foreign_keys=[buyer_id])
+
     # user_id = Column(Integer, ForeignKey('user.id'))
 
 

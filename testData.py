@@ -1,27 +1,43 @@
+import random
+import string
+from models import User, TransactionLogItem, TransactionStatus
 
-from models import User, Transaction
+def setupUsers(session, config):
 
-def setupUsers(session):
-    u1 = User(handle='u1')
+    u1 = User(handle=id_generator(), price = config['startingPrice'], balance = config['startingBalance'])
     session.add(u1)
     session.commit()
-    
-    u2 = User(handle='u2', owner=u1)
+
+    u2 = User(handle=id_generator(), owner=u1, price = config['startingPrice'], balance = config['startingBalance'])
     session.add(u2)
     session.commit()
     
-    u3 = User(handle='u3', owner=u1)
+    u3 = User(handle=id_generator(), owner=u1, price = config['startingPrice'], balance = config['startingBalance'])
     session.add(u3)
     session.commit()
-    
-    t1 = Transaction(amount=1, buyer=u2, seller=u1, user_sold=u3)
+
+    t1 = TransactionLogItem(amount=1, buyer=u2, seller=u1, user_sold=u3, status=TransactionStatus.SUCCESS, description="setupUsers test transaction creation")
     session.add(t1)
     session.commit()
 
+    t2 = TransactionLogItem(amount=1, buyer=u3, seller=u1, user_sold=u3, status=TransactionStatus.SUCCESS, description="setupUsers test transaction creation")
+    session.add(t2)
+    session.commit()
+
+
     return u1, u2, u3, t1
-##Insert an Address in the address table
-#new_address = Address(post_code='00000', person=new_person)
-#session.add(new_address)
-#session.commit()
+
+
+def setupBuyUsers(session, config):
+    u1, u2, u3, t1 = setupUsers(session, config)
+
+    u4 = User(handle=id_generator(), price = config['startingPrice'], balance = config['startingBalance'])
+    session.add(u4)
+    session.commit()
+
+    return u1, u2, u3, u4
+
+def id_generator(size=6, chars=string.ascii_lowercase):
+    return ''.join(random.choice(chars) for _ in range(size))
 
 

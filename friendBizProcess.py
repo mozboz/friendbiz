@@ -11,6 +11,7 @@ from tweepy import Stream
 # Go to http://apps.twitter.com and create an app.
 # The consumer key and secret will be generated for you after
 import commands
+from twitterUtils import userExists
 
 consumer_key="ckGuKbZGHiWy4OlT5eziWwjYV"
 consumer_secret="Jad2glvZLxWo7OBLNn3yLuCMFxSGgeNcbVV2mfdRvV49SQcyFg"
@@ -57,8 +58,13 @@ if __name__ == '__main__':
     auth.set_access_token(access_token, access_token_secret)
 
     api = API(auth)
+
     api.update_status('foo?')
 
-    l = StdOutListener(config, api)
-    stream = Stream(auth, l)
-    stream.userstream()
+    print(userExists('mozboz', api))
+
+    print(userExists('ihopethisuserdoesntexist1231312314423',api))
+
+#    l = StdOutListener(config, api)
+#    stream = Stream(auth, l)
+#    stream.userstream()

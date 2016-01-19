@@ -63,8 +63,3 @@ class TransactionLogItem(Base):
     # seller = relationship(User, back_populates="transactions_as_buyer", foreign_keys=[buyer_id])
 
     # user_id = Column(Integer, ForeignKey('user.id'))
-
-class TransactionStatus():
-    STARTED = "STARTED"
-    SUCCESS = "SUCCESS"
-    FAIL = "FAIL"

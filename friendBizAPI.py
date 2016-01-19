@@ -1,10 +1,5 @@
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import query
-from sqlalchemy.sql.expression import null
-from models import User, TransactionLogItem, TransactionStatus
-
-__author__ = 'james'
-
+from models import User, TransactionLogItem
 
 class friendBizAPI():
 
@@ -28,6 +23,7 @@ class friendBizAPI():
         u = session.query(User.owner_id).filter(User.id == userId).one_or_none()
         return False if None else u.owner_id
 
+    #
     def buy(self, buyerHandle, userSoldHandle):
 
         # do everything here in one session
@@ -53,17 +49,18 @@ class friendBizAPI():
                 buySession.commit()
                 transactionLog.success()
 
-                return txStatus(status=txStatus.STATUS_OK)
+                return transactionLog
 
             except SQLAlchemyError:
                 buySession.rollback()
 
-                transactionLog.fail(txStatus.DB_FAIL)
+                transactionLog.fail(TransactionValues.DB_FAIL)
 
-                return txStatus(status=txStatus.STATUS_FAIL, reason=txStatus.DB_FAIL)
+                return transactionLog
 
         else:
-            return txStatus(status=txStatus.STATUS_FAIL, reason=txStatus.BUY_FAIL_INSUFFICIENT_CREDIT)
+            transactionLog.fail(TransactionValues.BUY_FAIL_INSUFFICIENT_CREDIT)
+            return transactionLog
 
     # this is the algorithm that generates a new price for a user who has just been bought
     def priceStepAlgorithm(self, user):
@@ -118,27 +115,28 @@ class friendBizAPI():
 
 # make sure all critical information about transactions gets logged.
 # transaction logging not working is a critical failure that must stop execution
-class TransactionLog():
+class TransactionLog(TransactionLogItem):
     def __init__(self, sessionMaker):
         self.sessionMaker = sessionMaker
-        self.session = self.sessionMaker()
-        self.transaction = TransactionLogItem()
-        # self.session.add(self.transaction)
+        self.session = self.sessionMaker(expire_on_commit=False)
+
+    def __repr__(self):
+        return super(TransactionLog, self).__repr__()
 
     def startLog(self, buyer, buyerHandle, userSold, userSoldHandle):
-        self.transaction.description = "Buy: " + buyerHandle + " buying " + userSoldHandle
-        self.transaction.buyer_id = buyer.id
-        self.transaction.user_sold_id = userSold.id
+        self.description = "Buy: " + buyerHandle + " buying " + userSoldHandle
+        self.buyer_id = buyer.id
+        self.user_sold_id = userSold.id
         if userSold.owner_id:
-            self.transaction.seller_id = userSold.owner_id
-        self.transaction.status = TransactionStatus.STARTED
-        self.transaction.amount = userSold.price
-        self.session.add(self.transaction)
+            self.seller_id = userSold.owner_id
+        self.status = TransactionValues.STATUS_STARTED
+        self.amount = userSold.price
+        self.session.add(self)
         self.session.commit()
 
     def success(self):
         try:
-            self.transaction.status = TransactionStatus.SUCCESS
+            self.status = TransactionValues.STATUS_SUCCESS
             self.session.commit()
             self.session.close()
         except SQLAlchemyError:
@@ -147,27 +145,21 @@ class TransactionLog():
 
     def fail(self, reason):
         try:
-            self.transaction.status = TransactionStatus.FAIL
-            self.transaction.reason = reason
+            self.status = TransactionValues.STATUS_FAIL
+            self.reason = reason
             self.session.commit()
             self.session.close()
         except SQLAlchemyError:
             print "Logging failed, exiting"
             exit(1)
 
-
-
-
-class txStatus():
+class TransactionValues():
     # Status
-    STATUS_OK = 1
-    STATUS_FAIL = 2
+    STATUS_STARTED = "STARTED"
+    STATUS_SUCCESS = "SUCCESS"
+    STATUS_FAIL = "FAIL"
 
     # Reason
-    BUY_FAIL_INSUFFICIENT_CREDIT = 1
-    DB_FAIL = 2
-
-    def __init__(self, status, reason=None):
-        self.status = status
-        self.reason = reason
+    BUY_FAIL_INSUFFICIENT_CREDIT = "BUY_FAIL_INSUFFICIENT_CREDIT"
+    DB_FAIL = "DB_FAIL"
 

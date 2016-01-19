@@ -2,7 +2,7 @@ import unittest
 from commands import botCommands
 from friendBizApiTests import friendBizTest
 import parsing
-from testData import setupUsers
+from testData import setupUsersAndTransactions, setupUsers
 
 __author__ = 'james'
 
@@ -31,7 +31,7 @@ class testFriendBizParsing(friendBizTest):
         assert self.fakeTwitter.updateStatusCalls[0] == 'Hi @bishbosh, you said: ping this back'
 
     def testStatusCommand(self):
-        u1, u2, u3, t1 = setupUsers(self.session, self.config)
+        u1, u2, u3, t1 = setupUsersAndTransactions(self.session, self.config)
         h = "someguy"
         self.command.dispatch("status", [u1.handle], h)
         assert self.fakeTwitter.updateStatusCalls[0] == '@' + h +', @' + u1.handle + ' is not owned. Their price is 1, they have 100 credits and own 2 players'
@@ -43,6 +43,17 @@ class testFriendBizParsing(friendBizTest):
         self.command.dispatch("status", ['@' + u3.handle], h)
         assert self.fakeTwitter.updateStatusCalls[3] == '@' + h +', @' + u3.handle + ' is owned by @' + u1.handle + '. Their price is 1, they have 100 credits and own 0 players'
 
+    def testBuyCommandNotOwner(self):
+        u1, u2, u3 = setupUsers(self.session, self.config)
+        h = "someguy"
+        self.command.dispatch("buy", [u2.handle], u3.handle)
+        assert self.fakeTwitter.updateStatusCalls[0] == '@' + u3.handle + ', congrats! You bought @' + u2.handle + ' for ' + str(self.config['startingPrice'])
+
+    def testBuyCommandAlreadyOwner(self):
+        u1, u2, u3 = setupUsers(self.session, self.config)
+        h = "someguy"
+        self.command.dispatch("buy", [u2.handle], u3.handle)
+        assert self.fakeTwitter.updateStatusCalls[0] == '@' + u3.handle + ', congrats! You bought @' + u2.handle + ' for ' + str(self.config['startingPrice'])
 
 
     def getFakeIncomingTweet(self, botname, command):
@@ -59,3 +70,7 @@ class testFriendBizParsing(friendBizTest):
         config = {}
         config['botname'] = botname
         return config
+
+
+if __name__ == "__main__":
+    unittest.main()

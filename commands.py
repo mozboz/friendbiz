@@ -1,4 +1,5 @@
 from time import sleep
+from friendBizAPI import TransactionValues
 from friendBizUtils import prettyStatus
 from testData import id_generator
 from twitterUtils import userExists, rateLimit
@@ -40,6 +41,24 @@ class botCommands():
         if (userExists(handle, self.twitterAPI)):
             u = self.friendBizAPI.getOrCreateUserByHandle(handle)
             self.tweet('@' + sender + ', ' + prettyStatus(u))
+
+    def buy(self, params, sender):
+        buyer  = sender
+        user_sold = params[0]
+
+        if userExists(user_sold, self.twitterAPI):
+            transaction = self.friendBizAPI.buy(buyer, user_sold)
+
+            if transaction.status == TransactionValues.STATUS_SUCCESS:
+                self.tweet('@' + sender + ', congrats! You bought @' + user_sold + ' for ' + str(transaction.amount))
+            else:
+                if transaction.reason == TransactionValues.BUY_FAIL_INSUFFICIENT_CREDIT:
+                    b = self.friendBizAPI.getUserByHandle(buyer)
+                    self.tweet('@' + sender + ', you don\'t have enough credit to buy @' +
+                               user_sold +'. You have ' + str(b.balance) + ', you need ' + str(transaction.amount))
+                else:
+                    print("Buy transaction failed: " + transaction.__repr__())
+
 
     def tweet(self, t):
 

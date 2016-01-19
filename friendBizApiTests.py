@@ -5,7 +5,7 @@ from commands import botCommands
 from friendBizAPI import friendBizAPI
 from helpers import getDbString
 from models import User
-from testData import setupUsers, id_generator, setupBuyUsers
+from testData import setupUsersAndTransactions, id_generator, setupBuyUsers
 
 __author__ = 'james'
 
@@ -50,7 +50,7 @@ class testFriendBizApi(friendBizTest):
 
     def testInventory(self):
         # setup data
-        u1, u2, u3, t1 = setupUsers(self.session, self.config)
+        u1, u2, u3, t1 = setupUsersAndTransactions(self.session, self.config)
 
         # check inventory returns correct users
         # u1 should have two users in inventory: u2, u3
@@ -59,7 +59,7 @@ class testFriendBizApi(friendBizTest):
         assert sorted([u.id for u in inventory]) == sorted([u3.id, u2.id])
 
     def testOwner(self):
-        u1, u2, u3, t1 = setupUsers(self.session, self.config)
+        u1, u2, u3, t1 = setupUsersAndTransactions(self.session, self.config)
 
         # u2 should be owned by u1
         assert self.friendBizAPI.getOwnerID(u2.id, self.session) == u1.id
@@ -112,14 +112,14 @@ class testFriendBizApi(friendBizTest):
         assert u[0].balance == self.config['startingBalance'] - self.config['startingPrice']
 
     def testTransactions(self):
-        u1, u2, u3, t1 = setupUsers(self.session, self.config)
+        u1, u2, u3, t1 = setupUsersAndTransactions(self.session, self.config)
 
         assert len(u1.transactions.all()) == 2
         assert u1.transactions[0].id == t1.id
         assert u2.transactions[0].id == t1.id
 
     def testHistory(self):
-        u1, u2, u3, t1 = setupUsers(self.session, self.config)
+        u1, u2, u3, t1 = setupUsersAndTransactions(self.session, self.config)
         for x in range(0,20):
             self.friendBizAPI.buy(u1.handle, u3.handle)
             self.friendBizAPI.buy(u2.handle, u3.handle)

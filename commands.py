@@ -1,16 +1,21 @@
-from twitterUtils import userExists
+from time import sleep
+from friendBizUtils import prettyStatus
+from testData import id_generator
+from twitterUtils import userExists, rateLimit
 
 __author__ = 'james'
-
 
 # Process command tweeted to the bot
 #
 # Example command tweeted by someUser
 #
-#       !botName buy 10 fish
+#       @botName buy 10 fish
 #
 # For this command, dispatch will receive (command='buy', params=['10','fish'], sender='someUser')
 # Note duplicate whitespace in original tweet intentionally lost
+#
+# Twitter rate limiting (2400 tweets per day, limited at smaller time increments), means that it is not
+# clever to send error messages
 
 class botCommands():
 
@@ -30,23 +35,18 @@ class botCommands():
 
     def status(self, params, sender):
         handle = params[0]
+        if handle[0] == '@': handle = handle[1:]
+
         if (userExists(handle, self.twitterAPI)):
             u = self.friendBizAPI.getOrCreateUserByHandle(handle)
             self.tweet('@' + sender + ', ' + prettyStatus(u))
 
     def tweet(self, t):
-        self.twitterAPI.update_status(t)
+
+#        for x in range(0,10):
+#            sleep(2)
+#            self.twitterAPI.update_status(id_generator())
+
+        rateLimit(lambda: self.twitterAPI.update_status(t), self.twitterAPI)
+
         print ("Tweeted: " + t)
-
-
-def prettyStatus(u):
-    status="@" + u.handle
-    if u.owner:
-        status += " is owned by @" + u.owner.handle
-    else:
-        status += " is not owned"
-
-    status += ". Their price is %s, they have %s credits and own %s players" % (
-        u.price, u.balance, len(u.inventory))
-
-    return status

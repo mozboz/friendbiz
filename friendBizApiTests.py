@@ -42,7 +42,8 @@ class fakeTwitterAPI():
         self.getUserCalls.append(username)
         return True
 
-
+    def rate_limit_status(self):
+        return {"dummy_rate_limit_value": 1000}
 
 
 class testFriendBizApi(friendBizTest):
@@ -124,5 +125,3 @@ class testFriendBizApi(friendBizTest):
             self.friendBizAPI.buy(u2.handle, u3.handle)
 
         assert len(self.friendBizAPI.getHistory(u1.handle)) == self.config['historyLength']
-
-

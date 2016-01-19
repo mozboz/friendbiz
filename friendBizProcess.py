@@ -12,6 +12,7 @@ from tweepy import Stream
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
 from commands import botCommands
+from friendBizAPI import friendBizAPI
 from helpers import getDbString
 import parsing
 from twitterUtils import userExists
@@ -62,12 +63,11 @@ if __name__ == '__main__':
     auth.set_access_token(access_token, access_token_secret)
     twitterAPI = API(auth)
 
-    l = StdOutListener(config, twitterAPI)
-    stream = Stream(auth, l)
-    stream.userstream()
-
     engine = create_engine(getDbString(), pool_recycle=3600)
     dbSessionMaker = sessionmaker(bind=engine)
 
-    friendBizAPI = friendBizAPI(None, dbSessionMaker, config)
+    friendBizAPI = friendBizAPI(dbSessionMaker, config)
 
+    l = StdOutListener(config, twitterAPI, friendBizAPI)
+    stream = Stream(auth, l)
+    stream.userstream()

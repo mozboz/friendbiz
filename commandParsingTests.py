@@ -39,6 +39,9 @@ class testFriendBizParsing(friendBizTest):
         assert self.fakeTwitter.updateStatusCalls[1] == '@' + h +', @' + u2.handle + ' is owned by @' + u1.handle + '. Their price is 1, they have 100 credits and own 0 players'
         self.command.dispatch("status", [u3.handle], h)
         assert self.fakeTwitter.updateStatusCalls[2] == '@' + h +', @' + u3.handle + ' is owned by @' + u1.handle + '. Their price is 1, they have 100 credits and own 0 players'
+        # test with extra @ on front, output should be same
+        self.command.dispatch("status", ['@' + u3.handle], h)
+        assert self.fakeTwitter.updateStatusCalls[3] == '@' + h +', @' + u3.handle + ' is owned by @' + u1.handle + '. Their price is 1, they have 100 credits and own 0 players'
 
 
 

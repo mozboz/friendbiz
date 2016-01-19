@@ -18,7 +18,6 @@ class User(Base):
     # Notice that each column is also a normal Python instance attribute.
     id = Column(Integer, primary_key=True)
     handle = Column(String(250), nullable=False)
-    owned = Column(Boolean(), default=False)
     owner_id = Column(Integer, ForeignKey(id), nullable=True)
     price = Column(Integer, nullable=False, default=1)
     balance = Column(Integer, nullable=False, default=0)

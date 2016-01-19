@@ -45,16 +45,18 @@ class testFriendBizParsing(friendBizTest):
 
     def testBuyCommandNotOwner(self):
         u1, u2, u3 = setupUsers(self.session, self.config)
-        h = "someguy"
         self.command.dispatch("buy", [u2.handle], u3.handle)
         assert self.fakeTwitter.updateStatusCalls[0] == '@' + u3.handle + ', congrats! You bought @' + u2.handle + ' for ' + str(self.config['startingPrice'])
 
     def testBuyCommandAlreadyOwner(self):
         u1, u2, u3 = setupUsers(self.session, self.config)
-        h = "someguy"
-        self.command.dispatch("buy", [u2.handle], u3.handle)
-        assert self.fakeTwitter.updateStatusCalls[0] == '@' + u3.handle + ', congrats! You bought @' + u2.handle + ' for ' + str(self.config['startingPrice'])
+        self.command.dispatch("buy", [u1.handle], u1.handle)
+        assert self.fakeTwitter.updateStatusCalls[0] == '@' + u1.handle + ', you can\'t buy yourself ;)'
 
+    def testBuyCommandAlreadyOwner(self):
+        u1, u2, u3 = setupUsers(self.session, self.config)
+        self.command.dispatch("buy", [u2.handle], u1.handle)
+        assert self.fakeTwitter.updateStatusCalls[0] == '@' + u1.handle + ', you already own @' + u2.handle
 
     def getFakeIncomingTweet(self, botname, command):
         return {"created_at":"Thu Jan 14 21:31:18 +0000 2016",

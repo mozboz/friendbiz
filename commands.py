@@ -1,8 +1,7 @@
-from time import sleep
 from friendBizAPI import TransactionValues
 from friendBizUtils import prettyStatus
-from testData import id_generator
 from twitterUtils import userExists, rateLimit
+from tweepy import TweepError
 
 __author__ = 'james'
 
@@ -29,22 +28,23 @@ class botCommands():
     def dispatch(self, command, params, sender):
         if command in self._myCommands:
             getattr(self, command)(params, sender)
+        else:
+            print ("Unknown command: " + command)
 
     def echo(self, params, sender):
-        reply = 'Hi @' + sender + ', you said: ' + ' '.join(params)
+        reply = 'Hi @' + self.parseHandle(sender) + ', you said: ' + ' '.join(params)
         self.tweet(reply)
 
     def status(self, params, sender):
-        handle = params[0]
-        if handle[0] == '@': handle = handle[1:]
+        handle = self.parseHandle(params[0])
 
-        if (userExists(handle, self.twitterAPI)):
+        if userExists(handle, self.twitterAPI):
             u = self.friendBizAPI.getOrCreateUserByHandle(handle)
             self.tweet('@' + sender + ', ' + prettyStatus(u))
 
     def buy(self, params, sender):
-        buyer  = sender
-        user_sold = params[0]
+        buyer  = self.parseHandle(sender)
+        user_sold = self.parseHandle(params[0])
 
         if userExists(user_sold, self.twitterAPI):
             transaction = self.friendBizAPI.buy(buyer, user_sold)
@@ -56,16 +56,29 @@ class botCommands():
                     b = self.friendBizAPI.getUserByHandle(buyer)
                     self.tweet('@' + sender + ', you don\'t have enough credit to buy @' +
                                user_sold +'. You have ' + str(b.balance) + ', you need ' + str(transaction.amount))
+
+                elif transaction.reason == TransactionValues.BUY_FAIL_ALREADY_OWNER:
+                    self.tweet('@' + sender + ', you already own @' + user_sold)
+
+                elif transaction.reason == TransactionValues.BUY_FAIL_CANT_BUY_YOURSELF:
+                    self.tweet('@' + sender + ', you can\'t buy yourself ;)')
+
                 else:
                     print("Buy transaction failed: " + transaction.__repr__())
+
+    def inventory(self, params, sender):
+        u = self.friendBizAPI.getOrCreateUserByHandle(self.parseHandle(sender))
 
 
     def tweet(self, t):
 
-#        for x in range(0,10):
-#            sleep(2)
-#            self.twitterAPI.update_status(id_generator())
+        try:
+            rateLimit(lambda: self.twitterAPI.update_status(t), self.twitterAPI)
+            print ("Tweeted: " + t)
 
-        rateLimit(lambda: self.twitterAPI.update_status(t), self.twitterAPI)
+        except TweepError as e:
+            print ("Tweet Failed. Error: " + e.__repr__())
 
-        print ("Tweeted: " + t)
+    def parseHandle(self, handle):
+        if handle[0] == '@': handle = handle[1:]
+        return handle

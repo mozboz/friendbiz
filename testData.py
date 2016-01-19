@@ -1,5 +1,6 @@
 import random
 import string
+from friendBizAPI import TransactionValues
 from models import User, TransactionLogItem
 
 def setupUsers(session, config):
@@ -21,11 +22,11 @@ def setupUsersAndTransactions(session, config):
 
     u1, u2, u3 = setupUsers(session, config)
 
-    t1 = TransactionLogItem(amount=1, buyer=u2, seller=u1, user_sold=u3, status=TransactionStatus.SUCCESS, description="setupUsers test transaction creation")
+    t1 = TransactionLogItem(amount=1, buyer=u2, seller=u1, user_sold=u3, status=TransactionValues.STATUS_SUCCESS, description="setupUsers test transaction creation")
     session.add(t1)
     session.commit()
 
-    t2 = TransactionLogItem(amount=1, buyer=u3, seller=u1, user_sold=u3, status=TransactionStatus.SUCCESS, description="setupUsers test transaction creation")
+    t2 = TransactionLogItem(amount=1, buyer=u3, seller=u1, user_sold=u3, status=TransactionValues.STATUS_SUCCESS, description="setupUsers test transaction creation")
     session.add(t2)
     session.commit()
 

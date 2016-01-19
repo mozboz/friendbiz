@@ -36,6 +36,16 @@ class friendBizAPI():
 
         transactionLog.startLog(buyer, buyerHandle, userSold, userSoldHandle)
 
+        if buyerHandle == userSoldHandle:
+            transactionLog.fail(TransactionValues.BUY_FAIL_CANT_BUY_YOURSELF)
+            buySession.close()
+            return transactionLog
+
+        if userSold.owner == buyer:
+            transactionLog.fail(TransactionValues.BUY_FAIL_ALREADY_OWNER)
+            buySession.close()
+            return transactionLog
+
         if buyer.balance >= userSold.price:
             try:
                 buyer.balance -= userSold.price
@@ -52,7 +62,7 @@ class friendBizAPI():
                 return transactionLog
 
             except SQLAlchemyError:
-                buySession.rollback()
+                buySession.close()
 
                 transactionLog.fail(TransactionValues.DB_FAIL)
 
@@ -70,7 +80,6 @@ class friendBizAPI():
     def getHistory(self, handle):
         return self.runInSession(lambda s: s.query(User).filter(User.handle == handle).one().transactions[:self.config['historyLength']])
 
-
     def getOrCreateUserByHandle(self, handle, session=None):
         def getOrCreateThisUser(s):
             u = s.query(User).filter(User.handle == handle).one_or_none()
@@ -87,7 +96,7 @@ class friendBizAPI():
     def runInSession(self, func, session=None):
         s = self.permanentSession if session is None else session
         v = func(s)
-        # if session is None: s.close()
+        if session is None: s.commit()
         return v
 
     def createUser(self, handle, session=None):
@@ -159,7 +168,12 @@ class TransactionValues():
     STATUS_SUCCESS = "SUCCESS"
     STATUS_FAIL = "FAIL"
 
-    # Reason
+    # Reasons
+    ## Buy
     BUY_FAIL_INSUFFICIENT_CREDIT = "BUY_FAIL_INSUFFICIENT_CREDIT"
+    BUY_FAIL_CANT_BUY_YOURSELF = "BUY_FAIL_CANT_BUY_YOURSELF"
+    BUY_FAIL_ALREADY_OWNER = "BUY_FAIL_ALREADY_OWNER"
+
+    ## System
     DB_FAIL = "DB_FAIL"
 

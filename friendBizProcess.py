@@ -58,12 +58,13 @@ class StdOutListener(StreamListener):
 if __name__ == '__main__':
 
     config = {"startingBalance":100, "startingPrice":1, "historyLength":10, "botname": "friendbiz"}
+    platform = "prod"
 
     auth = OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
     twitterAPI = API(auth)
 
-    engine = create_engine(getDbString(), pool_recycle=3600)
+    engine = create_engine(getDbString(platform), pool_recycle=3600)
     dbSessionMaker = sessionmaker(bind=engine)
 
     friendBizAPI = friendBizAPI(dbSessionMaker, config)

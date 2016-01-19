@@ -1,3 +1,5 @@
 dbConnectionString.txt
+prodConnectionString.txt
 .idea
 *iml
+*pyc

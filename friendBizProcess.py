@@ -7,10 +7,13 @@ from tweepy import API
 from tweepy import Stream
 
 
-
 # Go to http://apps.twitter.com and create an app.
 # The consumer key and secret will be generated for you after
-import commands
+from sqlalchemy.engine import create_engine
+from sqlalchemy.orm.session import sessionmaker
+from commands import botCommands
+from helpers import getDbString
+import parsing
 from twitterUtils import userExists
 
 consumer_key="ckGuKbZGHiWy4OlT5eziWwjYV"
@@ -27,19 +30,21 @@ class StdOutListener(StreamListener):
 
     """
 
-    def __init__(self, config, api):
+    def __init__(self, config, twitterAPI, friendBizAPI):
         self.config = config
-        self.api = api
+        self.twitterAPI = twitterAPI
+        self.friendBizAPI = friendBizAPI
+        self.command = botCommands(self.twitterAPI, self.friendBizAPI)
 
     def on_data(self, twitterJson):
         twitterData = json.loads(twitterJson)
 
         if 'text' in twitterData:
         # get a context object with useful information appended, and unuseful information removed.
-            event = commands.event(twitterData, self.config)
+            event = parsing.event(twitterData, self.config)
             if event.isCommand:
-                print(event.command)
-                self.api.update_status(event.command)
+                print("Attempting to dispatch command " + event.command + " from " + event.sender)
+                self.command.dispatch(event.command, event.params, event.sender)
             else:
                 print("Not command")
                 print(twitterJson)
@@ -51,20 +56,18 @@ class StdOutListener(StreamListener):
 
 if __name__ == '__main__':
 
-    config = {}
-    config['botname'] = 'friendbiz'
+    config = {"startingBalance":100, "startingPrice":1, "historyLength":10, "botname": "friendbiz"}
 
     auth = OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
+    twitterAPI = API(auth)
 
-    api = API(auth)
+    l = StdOutListener(config, twitterAPI)
+    stream = Stream(auth, l)
+    stream.userstream()
 
-    api.update_status('foo?')
+    engine = create_engine(getDbString(), pool_recycle=3600)
+    dbSessionMaker = sessionmaker(bind=engine)
 
-    print(userExists('mozboz', api))
+    friendBizAPI = friendBizAPI(None, dbSessionMaker, config)
 
-    print(userExists('ihopethisuserdoesntexist1231312314423',api))
-
-#    l = StdOutListener(config, api)
-#    stream = Stream(auth, l)
-#    stream.userstream()

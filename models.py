@@ -46,7 +46,7 @@ class TransactionLogItem(Base):
     time = Column(DateTime(timezone=True), default=datetime.utcnow)
     buyer_id = Column(Integer, ForeignKey('user.id'), nullable=False)
     # @todo there may not be a seller, change nullable
-    seller_id = Column(Integer, ForeignKey('user.id'), nullable=False)
+    seller_id = Column(Integer, ForeignKey('user.id'))
     user_sold_id = Column(Integer, ForeignKey('user.id'), nullable=False)
     amount = Column(Integer)
     description = Column(String(1000), nullable=True)

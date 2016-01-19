@@ -24,7 +24,6 @@ def setupUsers(session, config):
     session.add(t2)
     session.commit()
 
-
     return u1, u2, u3, t1
 
 

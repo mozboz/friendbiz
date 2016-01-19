@@ -1,6 +1,7 @@
 import unittest
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import sessionmaker, query
+from commands import botCommands
 from friendBizAPI import friendBizAPI
 from helpers import getDbString
 from models import User
@@ -8,9 +9,7 @@ from testData import setupUsers, id_generator, setupBuyUsers
 
 __author__ = 'james'
 
-import commands
-
-class testFriendBizApi(unittest.TestCase):
+class friendBizTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -20,20 +19,33 @@ class testFriendBizApi(unittest.TestCase):
 
     def setUp(self):
         self.session = self.dbSessionMaker()
-        self.config = {"startingBalance":100, "startingPrice":1}
-        self.friendBizAPI = friendBizAPI(None, self.dbSessionMaker, self.config)
+        self.config = {"startingBalance":100, "startingPrice":1, "historyLength":10}
+        self.friendBizAPI = friendBizAPI(self.dbSessionMaker, self.config)
+        self.fakeTwitter = fakeTwitterAPI()
+        self.command = botCommands(self.fakeTwitter, self.friendBizAPI)
 
-    def testCommandParsing(self):
-        botname = 'friendbiz'
-        command = 'test5'
-        twitterData = {"created_at":"Thu Jan 14 21:31:18 +0000 2016","id":687748850279444480,"id_str":"687748850279444480","text":'@' + botname + ' ' + command,"source":"\u003ca href=\"http:\/\/twitter.com\" rel=\"nofollow\"\u003eTwitter Web Client\u003c\/a\u003e","truncated":False,"in_reply_to_status_id":'null',"in_reply_to_status_id_str":"null","in_reply_to_user_id":4806590788,"in_reply_to_user_id_str":"4806590788","in_reply_to_screen_name":"friendbiz","user":{"id":4806590788,"id_str":"4806590788","name":"zzo","screen_name":"friendbiz","location":'null',"url":'null',"description":'null',"protected":False,"verified":False,"followers_count":0,"friends_count":0,"listed_count":0,"favourites_count":0,"statuses_count":11,"created_at":"Thu Jan 14 18:26:16 +0000 2016","utc_offset":-28800,"time_zone":"Pacific Time (US & Canada)","geo_enabled":False,"lang":"en-gb","contributors_enabled":False,"is_translator":False,"profile_background_color":"F5F8FA","profile_background_image_url":"","profile_background_image_url_https":"","profile_background_tile":False,"profile_link_color":"2B7BB9","profile_sidebar_border_color":"C0DEED","profile_sidebar_fill_color":"DDEEF6","profile_text_color":"333333","profile_use_background_image":True,"profile_image_url":"http:\/\/abs.twimg.com\/sticky\/default_profile_images\/default_profile_6_normal.png","profile_image_url_https":"https:\/\/abs.twimg.com\/sticky\/default_profile_images\/default_profile_6_normal.png","default_profile":True,"default_profile_image":True,"following":'null',"follow_request_sent":'null',"notifications":'null'},"geo":'null',"coordinates":'null',"place":'null',"contributors":'null',"is_quote_status":False,"retweet_count":0,"favorite_count":0,"entities":{"hashtags":[],"urls":[],"user_mentions":[{"screen_name":"friendbiz","name":"zzo","id":4806590788,"id_str":"4806590788","indices":[0,10]}],"symbols":[]},"favorited":False,"retweeted":False,"filter_level":"low","lang":"en","timestamp_ms":"1452807078319"}
 
-        botConfig = {}
-        botConfig['botname'] = botname
+    def tearDown(self):
+        self.session.close()
+        self.friendBizAPI.close()
 
-        event = commands.event(twitterData, botConfig)
-        assert event.isCommand == True
-        assert event.command == command
+class fakeTwitterAPI():
+
+    def __init__(self):
+        self.updateStatusCalls = []
+        self.getUserCalls = []
+
+    def update_status(self, message):
+        self.updateStatusCalls.append(message)
+
+    def get_user(self, username):
+        self.getUserCalls.append(username)
+        return True
+
+
+
+
+class testFriendBizApi(friendBizTest):
 
     def testInventory(self):
         # setup data
@@ -80,6 +92,24 @@ class testFriendBizApi(unittest.TestCase):
         assert new_u[0].balance == self.config['startingBalance'] + self.config['startingPrice']
         assert new_u[1].price == targetPrice
 
+    def testBuyWithNewUsers(self):
+        uh = [id_generator(), id_generator()]
+        for h in uh:
+            assert self.session.query(User).filter(User.handle == h).one_or_none() is None
+
+        self.friendBizAPI.buy(uh[0], uh[1])
+
+        self.session.close()
+        self.session = self.dbSessionMaker()
+
+        # should now both exist
+        u = [self.friendBizAPI.getUserByHandle(h) for h in uh]
+
+        for i in u:
+            assert i is not None
+
+        assert u[0].balance == self.config['startingBalance'] - self.config['startingPrice']
+
     def testTransactions(self):
         u1, u2, u3, t1 = setupUsers(self.session, self.config)
 
@@ -87,8 +117,12 @@ class testFriendBizApi(unittest.TestCase):
         assert u1.transactions[0].id == t1.id
         assert u2.transactions[0].id == t1.id
 
-if __name__ == '__main__':
-    unittest.main()
+    def testHistory(self):
+        u1, u2, u3, t1 = setupUsers(self.session, self.config)
+        for x in range(0,20):
+            self.friendBizAPI.buy(u1.handle, u3.handle)
+            self.friendBizAPI.buy(u2.handle, u3.handle)
 
+        assert len(self.friendBizAPI.getHistory(u1.handle)) == self.config['historyLength']
 
 

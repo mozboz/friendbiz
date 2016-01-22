@@ -1,5 +1,6 @@
 dbConnectionString.txt
 prodConnectionString.txt
+configuration.py
 .idea
 *iml
 *pyc

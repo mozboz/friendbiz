@@ -25,7 +25,7 @@ class testFriendBizParsing(friendBizTest):
         assert event.sender == 'blobby914'
 
     def testEchoCommand(self):
-        self.command.dispatch("echo", ["ping","this","back"], "bishbosh")
+        self.command._dispatch("echo", ["ping","this","back"], "bishbosh")
 
         assert len(self.fakeTwitter.updateStatusCalls) == 1
         assert self.fakeTwitter.updateStatusCalls[0] == 'Hi @bishbosh, you said: ping this back'
@@ -33,29 +33,35 @@ class testFriendBizParsing(friendBizTest):
     def testStatusCommand(self):
         u1, u2, u3, t1 = setupUsersAndTransactions(self.session, self.config)
         h = "someguy"
-        self.command.dispatch("status", [u1.handle], h)
+        self.command._dispatch("status", [u1.handle], h)
         assert self.fakeTwitter.updateStatusCalls[0] == '@' + h +', @' + u1.handle + ' is not owned. Their price is 1, they have 100 credits and own 2 players'
-        self.command.dispatch("status", [u2.handle], h)
+        self.command._dispatch("status", [u2.handle], h)
         assert self.fakeTwitter.updateStatusCalls[1] == '@' + h +', @' + u2.handle + ' is owned by @' + u1.handle + '. Their price is 1, they have 100 credits and own 0 players'
-        self.command.dispatch("status", [u3.handle], h)
+        self.command._dispatch("status", [u3.handle], h)
         assert self.fakeTwitter.updateStatusCalls[2] == '@' + h +', @' + u3.handle + ' is owned by @' + u1.handle + '. Their price is 1, they have 100 credits and own 0 players'
         # test with extra @ on front, output should be same
-        self.command.dispatch("status", ['@' + u3.handle], h)
+        self.command._dispatch("status", ['@' + u3.handle], h)
         assert self.fakeTwitter.updateStatusCalls[3] == '@' + h +', @' + u3.handle + ' is owned by @' + u1.handle + '. Their price is 1, they have 100 credits and own 0 players'
 
     def testBuyCommandNotOwner(self):
         u1, u2, u3 = setupUsers(self.session, self.config)
-        self.command.dispatch("buy", [u2.handle], u3.handle)
-        assert self.fakeTwitter.updateStatusCalls[0] == '@' + u3.handle + ', congrats! You bought @' + u2.handle + ' for ' + str(self.config['startingPrice'])
+        self.command._dispatch("buy", [u2.handle], u3.handle)
+        assert self.fakeTwitter.updateStatusCalls[0] == '@' + u3.handle + ', congrats! You bought @' + u2.handle + ' from @' + u1.handle + ' for ' + str(self.config['startingPrice'])
 
-    def testBuyCommandAlreadyOwner(self):
+    def testBuyCommandNotOwned(self):
         u1, u2, u3 = setupUsers(self.session, self.config)
-        self.command.dispatch("buy", [u1.handle], u1.handle)
+        self.command._dispatch("buy", [u1.handle], u3.handle)
+        print "foo" +  self.fakeTwitter.updateStatusCalls[0]
+        assert self.fakeTwitter.updateStatusCalls[0] == '@' + u3.handle + ', congrats! You bought @' + u1.handle + ' for ' + str(self.config['startingPrice'])
+
+    def testBuyCommandCantBuyYourself(self):
+        u1, u2, u3 = setupUsers(self.session, self.config)
+        self.command._dispatch("buy", [u1.handle], u1.handle)
         assert self.fakeTwitter.updateStatusCalls[0] == '@' + u1.handle + ', you can\'t buy yourself ;)'
 
     def testBuyCommandAlreadyOwner(self):
         u1, u2, u3 = setupUsers(self.session, self.config)
-        self.command.dispatch("buy", [u2.handle], u1.handle)
+        self.command._dispatch("buy", [u2.handle], u1.handle)
         assert self.fakeTwitter.updateStatusCalls[0] == '@' + u1.handle + ', you already own @' + u2.handle
 
     def getFakeIncomingTweet(self, botname, command):

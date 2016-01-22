@@ -11,11 +11,10 @@ from sqlalchemy.types import Boolean, DateTime
 
 Base = declarative_base()
 
+# A user can own other users, and have transactions where they were the buyer or seller
 class User(Base):
     __tablename__ = 'user'
     __table_args__ = {'mysql_charset': 'utf8', 'mysql_engine': 'InnoDB'}
-    # Here we define columns for the table person
-    # Notice that each column is also a normal Python instance attribute.
     id = Column(Integer, primary_key=True)
     handle = Column(String(250), nullable=False)
     owner_id = Column(Integer, ForeignKey(id), nullable=True)
@@ -37,7 +36,8 @@ class User(Base):
         return "<User(id='%s', handle='%s', owner='%s', balance='%s')>" % (
             self.id, self.handle, self.owner_id, self.balance)
 
-
+# A transaction refers to a buyer, seller, and user sold.
+# It is not necessarily complete or successful, as reflected in 'status'
 class TransactionLogItem(Base):
     __tablename__ = 'transactionlog'
     __table_args__ = {'mysql_charset': 'utf8', 'mysql_engine': 'InnoDB'}

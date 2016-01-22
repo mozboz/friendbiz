@@ -13,17 +13,10 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
 from commands import botCommands
 from friendBizAPI import friendBizAPI
-from helpers import getDbString
 import parsing
+import configuration
 from twitterUtils import userExists
-
-consumer_key="ckGuKbZGHiWy4OlT5eziWwjYV"
-consumer_secret="Jad2glvZLxWo7OBLNn3yLuCMFxSGgeNcbVV2mfdRvV49SQcyFg"
-
-# After the step above, you will be redirected to your app's page.
-# Create an access token under the the "Your access token" section
-access_token="4806590788-7FIv0Mo3TSKgeDxGc9koQU8LGPJCn4CT22C1BgD"
-access_token_secret="cseVvqTZsH6GClR4Yvd1NZJnO8jkJs0Qyb0aVReGdOpev"
+from urllib3.exceptions import ReadTimeoutError
 
 class StdOutListener(StreamListener):
     """ A listener handles tweets that are received from the stream.
@@ -45,10 +38,10 @@ class StdOutListener(StreamListener):
             event = parsing.event(twitterData, self.config)
             if event.isCommand:
                 print("Attempting to dispatch command " + event.command + " from " + event.sender)
-                self.command.dispatch(event.command, event.params, event.sender)
+                self.command._dispatch(event.command, event.params, event.sender)
             else:
                 print("Not command")
-                print(twitterJson)
+                print(twitterData['text'] + "\n" + twitterData['user']['screen_name'] + ' : ' + twitterData['created_at'])
 
         return True
 
@@ -60,15 +53,19 @@ if __name__ == '__main__':
     config = {"startingBalance":100, "startingPrice":1, "historyLength":10, "botname": "friendbiz"}
     platform = "prod"
 
-    auth = OAuthHandler(consumer_key, consumer_secret)
-    auth.set_access_token(access_token, access_token_secret)
+    auth = OAuthHandler(configuration.friendBizConfig.twitterAPICredentials['consumer_key'], configuration.friendBizConfig.twitterAPICredentials['consumer_secret'])
+    auth.set_access_token(configuration.friendBizConfig.twitterAPICredentials['access_token'], configuration.friendBizConfig.twitterAPICredentials['access_token_secret'])
     twitterAPI = API(auth)
 
-    engine = create_engine(getDbString(platform), pool_recycle=3600)
+    engine = create_engine(configuration.friendBizConfig.dbConnectionString[platform], pool_recycle=3600)
     dbSessionMaker = sessionmaker(bind=engine)
 
     friendBizAPI = friendBizAPI(dbSessionMaker, config)
 
     l = StdOutListener(config, twitterAPI, friendBizAPI)
     stream = Stream(auth, l)
-    stream.userstream()
+    while True:
+        try:
+            stream.userstream()
+        except ReadTimeoutError as e:
+            print(e)

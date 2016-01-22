@@ -2,8 +2,8 @@ import unittest
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import sessionmaker, query
 from commands import botCommands
+from configuration import friendBizConfig
 from friendBizAPI import friendBizAPI
-from helpers import getDbString
 from models import User
 from testData import setupUsersAndTransactions, id_generator, setupBuyUsers
 
@@ -13,7 +13,7 @@ class friendBizTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        engine = create_engine(getDbString(), pool_recycle=3600)
+        engine = create_engine(friendBizConfig.dbConnectionString['dev'], pool_recycle=3600)
         cls.dbSessionMaker = sessionmaker(bind=engine)
         cls.friendBizAPI = friendBizAPI
 
